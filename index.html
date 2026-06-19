@@ -15,13 +15,13 @@
         <div class="header-actions">
             <button class="btn btn-success" onclick="exportToExcel()">📊 ส่งออก Excel</button>
             <button class="btn btn-warning" onclick="checkExpirations()">🔔 ตรวจสอบเอกสารใกล้หมดอายุ</button>
-            <button class="btn btn-primary" onclick="openLineModal()">💬 ตั้งค่า LINE</button>
+            <button class="btn btn-primary" onclick="openEmailModal()">📧 ตั้งค่าแจ้งเตือนอีเมล</button>
         </div>
     </div>
 
     <!-- Loading -->
     <div id="loadingIndicator" style="display:none; text-align:center; padding:20px; color:#3b82f6; font-weight:bold;">
-        ⏳ กำลังโหลดข้อมูลจาก Firebase...
+        ⏳ กำลังโหลดข้อมูล...
     </div>
 
     <div class="subtitle">สรุปสถานะเอกสารรถ — ปรับปรุงล่าสุด</div>
@@ -29,10 +29,8 @@
     <!-- Notification Banner -->
     <div class="notification-banner" id="notificationBanner">
         ⚠️ พบเอกสารที่ใกล้หมดอายุ <span class="badge-count" id="expiringCount">0</span> รายการ
-        <button class="btn btn-outline" style="margin-left:auto;padding:4px 16px;" onclick="sendLineNotification()">ส่งแจ้งเตือน</button>
+        <button class="btn btn-outline" style="margin-left:auto;padding:4px 16px;" onclick="sendEmailNotification()">📧 ส่งแจ้งเตือนทางอีเมล</button>
     </div>
-
-    <div id="lineStatus" style="display:none; padding:10px 16px; border-radius:12px; margin-bottom:16px; font-size:14px;"></div>
 
     <!-- Controls -->
     <div class="controls">
@@ -117,28 +115,58 @@
     </div>
 </div>
 
-<!-- LINE Modal -->
-<div class="modal-overlay" id="lineModal">
+<!-- Email Modal -->
+<div class="modal-overlay" id="emailModal">
     <div class="modal">
-        <h2>💬 ตั้งค่า LINE Messaging API</h2>
+        <h2>📧 ตั้งค่าการแจ้งเตือนทางอีเมล</h2>
+        <p>รับการแจ้งเตือนเมื่อเอกสารใกล้หมดอายุ ผ่าน EmailJS</p>
+        
         <div class="form-group">
-            <label>Channel Access Token</label>
-            <input type="password" id="lineTokenInput" placeholder="กรอก Channel Access Token" />
+            <label>อีเมลผู้รับ</label>
+            <input type="email" id="emailInput" value="phungaudomsongsakdi@gmail.com" />
+            <small style="color:#94a3b8;font-size:12px;display:block;margin-top:4px;">
+                อีเมลที่จะรับการแจ้งเตือน
+            </small>
         </div>
+        
         <div class="form-group">
-            <label>User ID</label>
-            <input type="text" id="lineUserIdInput" placeholder="กรอก User ID" />
+            <label>EmailJS Service ID</label>
+            <input type="text" id="emailServiceId" value="service_3ej324t" />
+            <small style="color:#94a3b8;font-size:12px;display:block;margin-top:4px;">
+                Service ID จาก EmailJS Dashboard
+            </small>
         </div>
+        
         <div class="form-group">
-            <label>เวลาแจ้งเตือน</label>
+            <label>EmailJS Template ID</label>
+            <input type="text" id="emailTemplateId" value="template_j88g4au" />
+            <small style="color:#94a3b8;font-size:12px;display:block;margin-top:4px;">
+                Template ID ของคุณ
+            </small>
+        </div>
+        
+        <div class="form-group">
+            <label>EmailJS Public Key</label>
+            <input type="text" id="emailPublicKey" placeholder="กรอก Public Key" />
+            <small style="color:#94a3b8;font-size:12px;display:block;margin-top:4px;">
+                ไปที่ EmailJS Dashboard → Account → API Keys
+            </small>
+        </div>
+        
+        <div class="form-group">
+            <label>เวลาที่ต้องการแจ้งเตือน (ทุกวัน)</label>
             <input type="time" id="notifyTimeInput" value="08:00" />
         </div>
+        
         <div class="modal-actions">
-            <button class="btn btn-success" onclick="saveLineSettings()">💾 บันทึก</button>
-            <button class="btn btn-outline" onclick="closeLineModal()">ยกเลิก</button>
+            <button class="btn btn-success" onclick="saveEmailSettings()">💾 บันทึก</button>
+            <button class="btn btn-outline" onclick="closeEmailModal()">ยกเลิก</button>
         </div>
     </div>
 </div>
+
+<!-- EmailJS SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
