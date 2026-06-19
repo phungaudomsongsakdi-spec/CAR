@@ -889,7 +889,6 @@ function checkExpirations() {
         banner.classList.add('show');
         count.textContent = expiring.length;
         
-        // แสดงจำนวนวันใน alert
         let msg = `⚠️ พบเอกสารที่ใกล้หมดอายุ ${expiring.length} รายการ\n\n`;
         expiring.forEach(item => {
             msg += `🚗 ${item.plate} - ${item.driver}\n`;
@@ -1079,19 +1078,44 @@ function scheduleDailyEmail() {
 }
 
 // ============================================================
-// 14. INIT - เริ่มต้นระบบ
+// 14. INIT - เริ่มต้นระบบ (แก้ไขแล้ว)
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('searchInput').addEventListener('input', applyFilters);
-    document.getElementById('filterLicense').addEventListener('change', applyFilters);
-    document.getElementById('filterTax').addEventListener('change', applyFilters);
-    document.getElementById('filterPrb').addEventListener('change', applyFilters);
-    document.getElementById('filterRegistered').addEventListener('change', applyFilters);
+    // 🔥 ตรวจสอบว่า element มีอยู่ก่อน绑定 event
+    const searchInput = document.getElementById('searchInput');
+    const filterLicense = document.getElementById('filterLicense');
+    const filterTax = document.getElementById('filterTax');
+    const filterPrb = document.getElementById('filterPrb');
+    const filterRegistered = document.getElementById('filterRegistered');
+    const emailModal = document.getElementById('emailModal');
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', applyFilters);
+    }
+    
+    if (filterLicense) {
+        filterLicense.addEventListener('change', applyFilters);
+    }
+    
+    if (filterTax) {
+        filterTax.addEventListener('change', applyFilters);
+    }
+    
+    if (filterPrb) {
+        filterPrb.addEventListener('change', applyFilters);
+    }
+    
+    if (filterRegistered) {
+        filterRegistered.addEventListener('change', applyFilters);
+    }
 
-    document.getElementById('emailModal').addEventListener('click', function(e) {
-        if (e.target === this) closeEmailModal();
-    });
+    if (emailModal) {
+        emailModal.addEventListener('click', function(e) {
+            if (e.target === this) closeEmailModal();
+        });
+    }
 
+    // ปิดปฏิทินเมื่อคลิกข้างนอก
     document.addEventListener('click', function(e) {
         document.querySelectorAll('[id^="calendar_"]').forEach(cal => {
             if (!cal.contains(e.target) && !e.target.closest('.btn-calendar')) {
@@ -1100,8 +1124,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // โหลดข้อมูล
     loadDataFromStorage();
     
+    // ตั้งเวลาส่งอีเมลอัตโนมัติ
     setTimeout(() => {
         scheduleDailyEmail();
     }, 2000);
