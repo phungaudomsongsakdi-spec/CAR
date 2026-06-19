@@ -931,16 +931,19 @@ if (emailPublicKey) {
 }
 
 function openEmailModal() {
+    const modal = document.getElementById('emailModal');
+    if (modal) modal.classList.add('active');
+    
     document.getElementById('emailInput').value = emailRecipient;
     document.getElementById('emailServiceId').value = emailServiceId;
     document.getElementById('emailTemplateId').value = emailTemplateId;
     document.getElementById('emailPublicKey').value = emailPublicKey;
     document.getElementById('notifyTimeInput').value = notifyTime;
-    document.getElementById('emailModal').classList.add('active');
 }
 
 function closeEmailModal() {
-    document.getElementById('emailModal').classList.remove('active');
+    const modal = document.getElementById('emailModal');
+    if (modal) modal.classList.remove('active');
 }
 
 function saveEmailSettings() {
@@ -1078,16 +1081,26 @@ function scheduleDailyEmail() {
 }
 
 // ============================================================
-// 14. INIT - เริ่มต้นระบบ (แก้ไขแล้ว)
+// 14. INIT - เริ่มต้นระบบ
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
-    // 🔥 ตรวจสอบว่า element มีอยู่ก่อน绑定 event
+    console.log('🔄 กำลังเริ่มต้นระบบ...');
+    
+    // ✅ ตรวจสอบ element ทั้งหมด
     const searchInput = document.getElementById('searchInput');
     const filterLicense = document.getElementById('filterLicense');
     const filterTax = document.getElementById('filterTax');
     const filterPrb = document.getElementById('filterPrb');
     const filterRegistered = document.getElementById('filterRegistered');
     const emailModal = document.getElementById('emailModal');
+    
+    console.log('🔍 ตรวจสอบ Element:');
+    console.log('  searchInput:', searchInput ? '✅' : '❌');
+    console.log('  filterLicense:', filterLicense ? '✅' : '❌');
+    console.log('  filterTax:', filterTax ? '✅' : '❌');
+    console.log('  filterPrb:', filterPrb ? '✅' : '❌');
+    console.log('  filterRegistered:', filterRegistered ? '✅' : '❌');
+    console.log('  emailModal:', emailModal ? '✅' : '❌');
     
     if (searchInput) {
         searchInput.addEventListener('input', applyFilters);
@@ -1111,13 +1124,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (emailModal) {
         emailModal.addEventListener('click', function(e) {
-            if (e.target === this) closeEmailModal();
+            if (e.target === this) {
+                closeEmailModal();
+            }
         });
     }
 
     // ปิดปฏิทินเมื่อคลิกข้างนอก
     document.addEventListener('click', function(e) {
-        document.querySelectorAll('[id^="calendar_"]').forEach(cal => {
+        document.querySelectorAll('[id^="calendar_"]').forEach(function(cal) {
             if (!cal.contains(e.target) && !e.target.closest('.btn-calendar')) {
                 cal.style.display = 'none';
             }
@@ -1125,11 +1140,15 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // โหลดข้อมูล
-    loadDataFromStorage();
+    if (typeof loadDataFromStorage === 'function') {
+        loadDataFromStorage();
+    }
     
     // ตั้งเวลาส่งอีเมลอัตโนมัติ
-    setTimeout(() => {
-        scheduleDailyEmail();
+    setTimeout(function() {
+        if (typeof scheduleDailyEmail === 'function') {
+            scheduleDailyEmail();
+        }
     }, 2000);
 
     console.log('🚀 ระบบพร้อมใช้งานแล้ว');
@@ -1140,5 +1159,5 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('📊 ปุ่ม Export Excel ใช้งานได้');
     console.log('🔍 ปุ่มกรอง หมดอายุทั้งหมด และ ใกล้หมดอายุทั้งหมด');
     console.log('🔄 สถานะจะอัปเดตอัตโนมัติเมื่อเลือกวันที่');
-    console.log('📋 ข้อมูลทั้งหมด', vehicleData.length, 'รายการ');
+    console.log('📋 ข้อมูลทั้งหมด', vehicleData ? vehicleData.length : 0, 'รายการ');
 });
