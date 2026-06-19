@@ -5,7 +5,7 @@
 const firebaseConfig = {
     apiKey: "AIzaSyBBEItLX7jZfgR-bxWcTtCDVYqE_JNF1go",
     authDomain: "cardox-7d562.firebaseapp.com",
-    databaseURL: "https://cardox-7d562-default-rtdb.asia-southeast1.firebasedatabase.app/",  // 🔥 URL ของคุณ
+    databaseURL: "https://cardox-7d562-default-rtdb.asia-southeast1.firebasedatabase.app/",
     projectId: "cardox-7d562",
     storageBucket: "cardox-7d562.firebasestorage.app",
     messagingSenderId: "273577001426",
