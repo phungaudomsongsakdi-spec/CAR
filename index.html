@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ระบบจัดการข้อมูลรถรับ-ส่ง</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="container">
+    <!-- Header -->
+    <div class="header">
+        <h1>🚌 ระบบจัดการข้อมูลรถรับ-ส่ง</h1>
+        <div class="header-actions">
+            <button class="btn btn-success" onclick="exportToExcel()">📊 ส่งออก Excel</button>
+            <button class="btn btn-warning" onclick="checkExpirations()">🔔 ตรวจสอบเอกสารใกล้หมดอายุ</button>
+            <button class="btn btn-primary" onclick="openLineModal()">💬 ตั้งค่า LINE</button>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loadingIndicator" style="display:none; text-align:center; padding:20px; color:#3b82f6; font-weight:bold;">
+        ⏳ กำลังโหลดข้อมูลจาก Firebase...
+    </div>
+
+    <div class="subtitle">สรุปสถานะเอกสารรถ — ปรับปรุงล่าสุด</div>
+
+    <!-- Notification Banner -->
+    <div class="notification-banner" id="notificationBanner">
+        ⚠️ พบเอกสารที่ใกล้หมดอายุ <span class="badge-count" id="expiringCount">0</span> รายการ
+        <button class="btn btn-outline" style="margin-left:auto;padding:4px 16px;" onclick="sendLineNotification()">ส่งแจ้งเตือน</button>
+    </div>
+
+    <div id="lineStatus" style="display:none; padding:10px 16px; border-radius:12px; margin-bottom:16px; font-size:14px;"></div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="🔍 ค้นหาทะเบียน, ชื่อผู้ขับขี่..." />
+        </div>
+        <div class="filter-group">
+            <select id="filterLicense">
+                <option value="all">📄 ใบขับขี่ทั้งหมด</option>
+                <option value="valid">✅ ปกติ/ตลอดชีพ</option>
+                <option value="expired">❌ หมดอายุแล้ว</option>
+                <option value="warning">⚠️ ใกล้หมดอายุ</option>
+            </select>
+            <select id="filterTax">
+                <option value="all">📄 ภาษีทั้งหมด</option>
+                <option value="has">✅ มีข้อมูล</option>
+                <option value="empty">❌ ไม่มีข้อมูล</option>
+                <option value="expired">❌ หมดอายุแล้ว</option>
+                <option value="warning">⚠️ ใกล้หมดอายุ</option>
+            </select>
+            <select id="filterPrb">
+                <option value="all">📄 พรบ.ทั้งหมด</option>
+                <option value="has">✅ มีข้อมูล</option>
+                <option value="empty">❌ ไม่มีข้อมูล</option>
+                <option value="expired">❌ หมดอายุแล้ว</option>
+                <option value="warning">⚠️ ใกล้หมดอายุ</option>
+            </select>
+            <select id="filterRegistered">
+                <option value="all">📋 จดทะเบียนทั้งหมด</option>
+                <option value="yes">✅ มี</option>
+                <option value="no">❌ ไม่มี</option>
+            </select>
+            <button class="btn btn-outline" onclick="resetFilters()">↻ รีเซ็ต</button>
+        </div>
+    </div>
+
+    <div class="quick-filter-group">
+        <button class="btn btn-danger btn-sm" onclick="filterExpiredAll()">❌ หมดอายุทั้งหมด</button>
+        <button class="btn btn-warning btn-sm" onclick="filterWarningAll()">⚠️ ใกล้หมดอายุทั้งหมด</button>
+        <button class="btn btn-outline btn-sm" onclick="resetFilters()">✅ แสดงทั้งหมด</button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th rowspan="2" style="width:35px;">#</th>
+                    <th rowspan="2" style="min-width:85px;">ทะเบียนรถ</th>
+                    <th rowspan="2" style="min-width:160px;">ผู้ขับขี่</th>
+                    <th rowspan="2" style="min-width:90px;">บัตรประชาชน</th>
+                    <th rowspan="2" style="min-width:50px;">สถานะ</th>
+                    <th rowspan="2" style="min-width:90px;">ใบขับขี่</th>
+                    <th rowspan="2" style="min-width:50px;">สถานะ</th>
+                    <th rowspan="2" style="min-width:80px;">จดทะเบียน</th>
+                    <th rowspan="2" style="width:60px;">ผู้โดยสาร</th>
+                    <th rowspan="2" style="width:65px;">ระยะทาง</th>
+                    <th colspan="3" style="min-width:200px;text-align:center;">เวลารับ-ส่ง</th>
+                    <th rowspan="2" style="min-width:70px;">ชนิดน้ำมัน</th>
+                    <th rowspan="2" style="min-width:80px;">ภาษี</th>
+                    <th rowspan="2" style="min-width:50px;">สถานะ</th>
+                    <th rowspan="2" style="min-width:80px;">พรบ.</th>
+                    <th rowspan="2" style="min-width:50px;">สถานะ</th>
+                    <th rowspan="2" style="width:70px;">จัดการ</th>
+                </tr>
+                <tr>
+                    <th style="width:65px;">08.00-17.00</th>
+                    <th style="width:65px;">17.00-20.00</th>
+                    <th style="width:65px;">20.00-08.00</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+
+    <div class="stats">
+        <div class="stats-item"><span class="label">🚗 ทั้งหมด:</span> <span class="num" id="totalCount">0</span></div>
+        <div class="stats-item"><span class="label">✅ ใบขับขี่ปกติ:</span> <span class="num" id="validLicenseCount">0</span></div>
+        <div class="stats-item"><span class="label">❌ ใบขับขี่หมดอายุ:</span> <span class="num" id="expiredLicenseCount">0</span></div>
+        <div class="stats-item"><span class="label">⚠️ ใกล้หมดอายุ:</span> <span class="num" id="warningLicenseCount">0</span></div>
+        <div class="stats-item"><span class="label">📋 เอกสารครบ:</span> <span class="num" id="completeCount">0</span></div>
+    </div>
+</div>
+
+<!-- LINE Modal -->
+<div class="modal-overlay" id="lineModal">
+    <div class="modal">
+        <h2>💬 ตั้งค่า LINE Messaging API</h2>
+        <div class="form-group">
+            <label>Channel Access Token</label>
+            <input type="password" id="lineTokenInput" placeholder="กรอก Channel Access Token" />
+        </div>
+        <div class="form-group">
+            <label>User ID</label>
+            <input type="text" id="lineUserIdInput" placeholder="กรอก User ID" />
+        </div>
+        <div class="form-group">
+            <label>เวลาแจ้งเตือน</label>
+            <input type="time" id="notifyTimeInput" value="08:00" />
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-success" onclick="saveLineSettings()">💾 บันทึก</button>
+            <button class="btn btn-outline" onclick="closeLineModal()">ยกเลิก</button>
+        </div>
+    </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<!-- Firebase Config -->
+<script src="firebase-config.js"></script>
+
+<!-- Main Script -->
+<script src="script.js"></script>
+</body>
+</html>
