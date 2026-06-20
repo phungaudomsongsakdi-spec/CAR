@@ -116,7 +116,7 @@ function updateStatusFromDates(item) {
 }
 
 // ============================================================
-// 4. VEHICLE DATA - ครบ 26 รายการ (อัปเดตล่าสุด ใช้ พ.ศ.)
+// 4. VEHICLE DATA - ครบ 26 รายการ (ใช้ พ.ศ. ทั้งหมด)
 // ============================================================
 const defaultVehicleData = [
     { id: 1, plate: "30-0131", driver: "นายวิเชียร โชคปลอด", sub: "", idCard: "ตลอดชีพ", idStatus: "✔️ ตลอดชีพ", license: "24/08/2571", licenseStatus: "✔️  ปกติ", registered: "", passengers: 56, dist: 48, time1: "✓", time2: "✓", time3: "✓", fuel: "ดีเซล", tax: "2569-12-31 00:00:00", taxStatus: "", prb: "2569-12-31 00:00:00", prbStatus: "" },
