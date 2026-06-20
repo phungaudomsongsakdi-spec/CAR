@@ -984,13 +984,6 @@ async function sendEmailTest() {
         const taxText = '📄 ภาษี: 15/08/2026 (⚠️ ใกล้หมดอายุ 55 วัน)';
         const prbText = '📄 พรบ.: 10/08/2026 (⚠️ ใกล้หมดอายุ 50 วัน)';
 
-        console.log('📧 กำลังส่งอีเมลทดสอบ...');
-        console.log('  plate: ทดสอบ 999');
-        console.log('  driver: นายทดสอบ สมมติ');
-        console.log('  licenseText:', licenseText);
-        console.log('  taxText:', taxText);
-        console.log('  prbText:', prbText);
-
         const response = await emailjs.send(emailServiceId, emailTemplateId, {
             to_email: emailRecipient,
             subject: '✅ ทดสอบการแจ้งเตือนจากระบบรถรับ-ส่ง',
@@ -1046,13 +1039,6 @@ async function sendEmailNotification() {
             const days = getDaysRemaining(item.prb);
             prbText = `📄 พรบ.: ${formatDateDisplay(item.prb)} (⚠️ ใกล้หมดอายุ ${days} วัน)`;
         }
-
-        console.log(`📧 ส่งอีเมลสำหรับ ${item.plate}:`);
-        console.log('  plate:', item.plate);
-        console.log('  driver:', item.driver);
-        console.log('  licenseText:', licenseText);
-        console.log('  taxText:', taxText);
-        console.log('  prbText:', prbText);
 
         const templateParams = {
             to_email: emailRecipient,
@@ -1172,7 +1158,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('📌 คลิก ✏️ เพื่อแก้ไขข้อมูล');
     console.log('📅 คลิก 📅 เพื่อเลือกวันที่แบบปฏิทินไทย (พ.ศ.)');
     console.log('♾️ คลิก "ตลอดชีพ" เพื่อตั้งค่าเป็นตลอดชีพ');
-    console.log('📧 ใช้ EmailJS สำหรับแจ้งเตือน (ไม่ใช้ Handlebars)');
+    console.log('📧 ใช้ EmailJS สำหรับแจ้งเตือน');
     console.log('📊 ปุ่ม Export Excel ใช้งานได้');
     console.log('🔍 ปุ่มกรอง หมดอายุทั้งหมด และ ใกล้หมดอายุทั้งหมด');
     console.log('🔄 สถานะจะอัปเดตอัตโนมัติเมื่อเลือกวันที่');
