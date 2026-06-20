@@ -915,7 +915,7 @@ function checkExpirations() {
 }
 
 // ============================================================
-// 13. EMAILJS - ส่งอีเมลผ่าน EmailJS (แก้ไขแล้ว - ไม่ใช้ Handlebars)
+// 13. EMAILJS - ส่งอีเมลผ่าน EmailJS (รวมทั้งหมดในอีเมลเดียว)
 // ============================================================
 
 let emailRecipient = localStorage.getItem('emailRecipient') || 'phungaudomsongsakdi@gmail.com';
@@ -980,18 +980,12 @@ async function sendEmailTest() {
 
     try {
         // ✅ สร้างข้อความสำเร็จรูป (ไม่ใช้ Handlebars ใน Template)
-        const licenseText = '📄 ใบขับขี่: 20/08/2026 (⚠️ ใกล้หมดอายุ 60 วัน)';
-        const taxText = '📄 ภาษี: 15/08/2026 (⚠️ ใกล้หมดอายุ 55 วัน)';
-        const prbText = '📄 พรบ.: 10/08/2026 (⚠️ ใกล้หมดอายุ 50 วัน)';
+        const testMessage = '🚗 ทะเบียน: ทดสอบ 999\n👤 ผู้ขับขี่: นายทดสอบ สมมติ\n📄 ใบขับขี่: 20/08/2026 (⚠️ ใกล้หมดอายุ 60 วัน)\n📄 ภาษี: 15/08/2026 (⚠️ ใกล้หมดอายุ 55 วัน)\n📄 พรบ.: 10/08/2026 (⚠️ ใกล้หมดอายุ 50 วัน)\n';
 
         const response = await emailjs.send(emailServiceId, emailTemplateId, {
             to_email: emailRecipient,
             subject: '✅ ทดสอบการแจ้งเตือนจากระบบรถรับ-ส่ง',
-            plate: 'ทดสอบ 999',
-            driver: 'นายทดสอบ สมมติ',
-            licenseText: licenseText,
-            taxText: taxText,
-            prbText: prbText,
+            combinedMessage: testMessage,
             totalCount: 1
         });
         
@@ -1019,52 +1013,45 @@ async function sendEmailNotification() {
         return;
     }
 
-    let successCount = 0;
-    for (const item of expiring) {
-        // ✅ สร้างข้อความสำเร็จรูป (ไม่ใช้ Handlebars)
-        let licenseText = '';
+    // ✅ สร้างข้อความรวมทั้งหมดในอีเมลเดียว
+    let combinedMessage = '';
+    expiring.forEach((item) => {
+        combinedMessage += `🚗 ทะเบียน: ${item.plate}\n`;
+        combinedMessage += `👤 ผู้ขับขี่: ${item.driver}\n`;
+        
         if (getDateStatus(item.license) === 'warning') {
             const days = getDaysRemaining(item.license);
-            licenseText = `📄 ใบขับขี่: ${formatDateDisplay(item.license)} (⚠️ ใกล้หมดอายุ ${days} วัน)`;
+            combinedMessage += `📄 ใบขับขี่: ${formatDateDisplay(item.license)} (⚠️ ใกล้หมดอายุ ${days} วัน)\n`;
         }
-        
-        let taxText = '';
         if (getDateStatus(item.tax) === 'warning') {
             const days = getDaysRemaining(item.tax);
-            taxText = `📄 ภาษี: ${formatDateDisplay(item.tax)} (⚠️ ใกล้หมดอายุ ${days} วัน)`;
+            combinedMessage += `📄 ภาษี: ${formatDateDisplay(item.tax)} (⚠️ ใกล้หมดอายุ ${days} วัน)\n`;
         }
-        
-        let prbText = '';
         if (getDateStatus(item.prb) === 'warning') {
             const days = getDaysRemaining(item.prb);
-            prbText = `📄 พรบ.: ${formatDateDisplay(item.prb)} (⚠️ ใกล้หมดอายุ ${days} วัน)`;
+            combinedMessage += `📄 พรบ.: ${formatDateDisplay(item.prb)} (⚠️ ใกล้หมดอายุ ${days} วัน)\n`;
         }
+        combinedMessage += '\n';
+    });
 
-        const templateParams = {
-            to_email: emailRecipient,
-            subject: `📋 แจ้งเตือนเอกสารใกล้หมดอายุ: ${item.plate}`,
-            plate: item.plate,
-            driver: item.driver,
-            licenseText: licenseText,
-            taxText: taxText,
-            prbText: prbText,
-            totalCount: expiring.length
-        };
+    const templateParams = {
+        to_email: emailRecipient,
+        subject: `📋 แจ้งเตือนเอกสารใกล้หมดอายุ (${expiring.length} รายการ)`,
+        combinedMessage: combinedMessage,
+        totalCount: expiring.length
+    };
 
-        try {
-            const response = await emailjs.send(emailServiceId, emailTemplateId, templateParams);
-            if (response.status === 200) {
-                successCount++;
-                console.log(`✅ ส่งอีเมลสำหรับ ${item.plate} สำเร็จ`);
-            } else {
-                console.log(`❌ ส่งอีเมลสำหรับ ${item.plate} ล้มเหลว:`, response.text);
-            }
-        } catch (error) {
-            console.error(`❌ ส่งอีเมลสำหรับ ${item.plate} ล้มเหลว:`, error);
+    try {
+        const response = await emailjs.send(emailServiceId, emailTemplateId, templateParams);
+        if (response.status === 200) {
+            alert(`✅ ส่งอีเมลแจ้งเตือนสำเร็จ! (${expiring.length} รายการ)`);
+        } else {
+            alert('❌ ส่งอีเมลไม่สำเร็จ: ' + response.text);
         }
+    } catch (error) {
+        console.error('EmailJS Error:', error);
+        alert('❌ เกิดข้อผิดพลาด: ' + error.message);
     }
-    
-    alert(`✅ ส่งอีเมลแจ้งเตือนสำเร็จ ${successCount} จาก ${expiring.length} รายการ!`);
 }
 
 function scheduleDailyEmail() {
@@ -1158,7 +1145,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('📌 คลิก ✏️ เพื่อแก้ไขข้อมูล');
     console.log('📅 คลิก 📅 เพื่อเลือกวันที่แบบปฏิทินไทย (พ.ศ.)');
     console.log('♾️ คลิก "ตลอดชีพ" เพื่อตั้งค่าเป็นตลอดชีพ');
-    console.log('📧 ใช้ EmailJS สำหรับแจ้งเตือน');
+    console.log('📧 ใช้ EmailJS สำหรับแจ้งเตือน (รวมทั้งหมดในอีเมลเดียว)');
     console.log('📊 ปุ่ม Export Excel ใช้งานได้');
     console.log('🔍 ปุ่มกรอง หมดอายุทั้งหมด และ ใกล้หมดอายุทั้งหมด');
     console.log('🔄 สถานะจะอัปเดตอัตโนมัติเมื่อเลือกวันที่');
