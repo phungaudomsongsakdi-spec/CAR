@@ -1,45 +1,30 @@
 // ============================================================
 // 1. DATA - ฟังก์ชันแสดงวันที่แบบไทย (พ.ศ.)
 // ============================================================
-function formatThaiDate(dateStr) {
-    if (!dateStr || dateStr === 'ตลอดชีพ') return dateStr;
-    
-    const parts = dateStr.trim().split(' ');
-    const datePart = parts[0];
-    if (!datePart) return dateStr;
-    
-    const ymd = datePart.split('-');
-    if (ymd.length !== 3) return dateStr;
-    
-    let y = parseInt(ymd[0], 10);
-    const m = parseInt(ymd[1], 10);
-    const d = parseInt(ymd[2], 10);
-    
-    // ถ้าเป็น ค.ศ. (ปีน้อยกว่า 2400) ให้แปลงเป็น พ.ศ.
-    if (y < 2400) y = y + 543;
-    
-    return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
-}
-
 function formatDateDisplay(dateStr) {
     if (!dateStr) return '-';
     if (dateStr === 'ตลอดชีพ') return 'ตลอดชีพ';
-    return formatThaiDate(dateStr);
+
+    const parts = dateStr.trim().split(' ')[0].split('-');
+    if (parts.length !== 3) return dateStr;
+
+    const d = parts[2];
+    const m = parts[1];
+    const y = parts[0];
+
+    return `${d}/${m}/${y}`;
 }
 
 // ============================================================
-// 2. DATE CHECK FUNCTIONS (ใช้แปลงเป็น ค.ศ. เพื่อคำนวณ)
+// 2. DATE CHECK FUNCTIONS (แปลง พ.ศ. → ค.ศ. เพื่อคำนวณ)
 // ============================================================
 function parseBuddhistDate(dateStr) {
     if (!dateStr || dateStr === 'ตลอดชีพ') return null;
-    const parts = dateStr.trim().split(' ');
-    const datePart = parts[0];
-    if (!datePart) return null;
-    const ymd = datePart.split('-');
-    if (ymd.length !== 3) return null;
-    let y = parseInt(ymd[0], 10);
-    const m = parseInt(ymd[1], 10) - 1;
-    const d = parseInt(ymd[2], 10);
+    const parts = dateStr.trim().split(' ')[0].split('-');
+    if (parts.length !== 3) return null;
+    let y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10) - 1;
+    const d = parseInt(parts[2], 10);
     if (y > 2400) y = y - 543;
     return new Date(y, m, d);
 }
@@ -232,6 +217,7 @@ function exportToExcel() {
         let dataToExport = currentFilteredData.length > 0 ? currentFilteredData : vehicleData;
 
         const now = new Date();
+        const thaiYear = now.getFullYear() + 543;
         const reportDate = now.toLocaleDateString('th-TH', {
             year: 'numeric',
             month: '2-digit',
@@ -359,8 +345,7 @@ function exportToExcel() {
         let link = document.createElement("a");
         let url = URL.createObjectURL(blob);
         link.href = url;
-        let now = new Date();
-        let fileName = `vehicle_report_${now.getFullYear()+543}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}.xls`;
+        let fileName = `vehicle_report_${thaiYear}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}.xls`;
         link.setAttribute("download", fileName);
         document.body.appendChild(link);
         link.click();
@@ -701,7 +686,12 @@ function cancelEdit() {
 // 10. THAI CALENDAR FUNCTIONS
 // ============================================================
 
-let calendarContext = { field: '', year: 2569, month: 5, selectedDay: 0 };
+let calendarContext = {
+    field: '',
+    year: new Date().getFullYear() + 543,
+    month: new Date().getMonth(),
+    selectedDay: 0
+};
 
 function openThaiCalendar(field) {
     const currentVal = editData[field] || '';
@@ -721,8 +711,8 @@ function openThaiCalendar(field) {
     }
     
     calendarContext.field = field;
-    calendarContext.year = year || 2569;
-    calendarContext.month = month || (new Date().getMonth());
+    calendarContext.year = year || (new Date().getFullYear() + 543);
+    calendarContext.month = month || new Date().getMonth();
     calendarContext.selectedDay = day || 0;
     
     renderThaiCalendar(field);
@@ -1032,13 +1022,33 @@ async function sendEmailTest() {
     }
 
     try {
-        const testMessage = '🚗 ทะเบียน: ทดสอบ 999\n👤 ผู้ขับขี่: นายทดสอบ สมมติ\n📄 ใบขับขี่: 20/08/2026 (⚠️ ใกล้หมดอายุ 60 วัน)\n📄 ภาษี: 15/08/2026 (⚠️ ใกล้หมดอายุ 55 วัน)\n📄 พรบ.: 10/08/2026 (⚠️ ใกล้หมดอายุ 50 วัน)\n';
+        // ข้อมูลทดสอบแบบเต็ม (แสดงหมดอายุและใกล้หมดอายุ)
+        const testMessage = 
+            '❌ เอกสารที่หมดอายุแล้ว (1 รายการ)\n' +
+            '════════════════════════\n\n' +
+            '🚗 ทะเบียน: บล 8466\n' +
+            '👤 ผู้ขับขี่: นายสมมาศ ยอดนิล\n' +
+            '📄 ใบขับขี่: 06/08/2569 (❌ หมดอายุแล้ว)\n' +
+            '📄 ภาษี: 10/07/2569 (❌ หมดอายุแล้ว)\n' +
+            '📄 พรบ.: 10/07/2569 (❌ หมดอายุแล้ว)\n\n' +
+            '⚠️ เอกสารที่ใกล้หมดอายุ (2 รายการ)\n' +
+            '════════════════════════\n\n' +
+            '🚗 ทะเบียน: นค 7010\n' +
+            '👤 ผู้ขับขี่: นางสาวจุฑามาศ ตราชู\n' +
+            '📄 ภาษี: 05/08/2569 (⚠️ ใกล้หมดอายุ 47 วัน)\n' +
+            '📄 พรบ.: 31/07/2569 (⚠️ ใกล้หมดอายุ 42 วัน)\n\n' +
+            '🚗 ทะเบียน: บน 8763\n' +
+            '👤 ผู้ขับขี่: นาวสาวสาวิตรี รักงาม\n' +
+            '📄 ภาษี: 15/08/2569 (⚠️ ใกล้หมดอายุ 57 วัน)\n' +
+            '📄 พรบ.: 15/08/2569 (⚠️ ใกล้หมดอายุ 57 วัน)\n\n' +
+            '📊 จำนวนเอกสารหมดอายุ: 1 รายการ, ใกล้หมดอายุ: 2 รายการ\n' +
+            '🔗 เปิดระบบ: https://phungaudomsongsakdi-spec.github.io/CAR/';
 
         const response = await emailjs.send(emailServiceId, emailTemplateId, {
             to_email: emailRecipient,
-            subject: '✅ ทดสอบการแจ้งเตือนจากระบบรถรับ-ส่ง',
+            subject: '✅ ทดสอบการแจ้งเตือนจากระบบรถรับ-ส่ง (แสดงหมดอายุและใกล้หมดอายุ)',
             combinedMessage: testMessage,
-            totalCount: 1
+            totalCount: 3
         });
         
         if (response.status === 200) {
@@ -1073,7 +1083,7 @@ async function sendEmailNotification() {
     // ส่วนที่หมดอายุแล้ว
     if (expired.length > 0) {
         combinedMessage += `❌ เอกสารที่หมดอายุแล้ว (${expired.length} รายการ)\n`;
-        combinedMessage += '═'.repeat(30) + '\n\n';
+        combinedMessage += '════════════════════════\n\n';
         expired.forEach((item) => {
             combinedMessage += `🚗 ทะเบียน: ${item.plate}\n`;
             combinedMessage += `👤 ผู้ขับขี่: ${item.driver}\n`;
@@ -1095,7 +1105,7 @@ async function sendEmailNotification() {
     if (expiring.length > 0) {
         if (expired.length > 0) combinedMessage += '\n';
         combinedMessage += `⚠️ เอกสารที่ใกล้หมดอายุ (${expiring.length} รายการ)\n`;
-        combinedMessage += '═'.repeat(30) + '\n\n';
+        combinedMessage += '════════════════════════\n\n';
         expiring.forEach((item) => {
             combinedMessage += `🚗 ทะเบียน: ${item.plate}\n`;
             combinedMessage += `👤 ผู้ขับขี่: ${item.driver}\n`;
