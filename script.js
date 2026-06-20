@@ -4,14 +4,14 @@
 function formatDateDisplay(dateStr) {
     if (!dateStr) return '-';
     if (dateStr === 'ตลอดชีพ') return 'ตลอดชีพ';
-
+    
     const parts = dateStr.trim().split(' ')[0].split('-');
     if (parts.length !== 3) return dateStr;
-
+    
     const d = parts[2];
     const m = parts[1];
     const y = parts[0];
-
+    
     return `${d}/${m}/${y}`;
 }
 
