@@ -915,7 +915,7 @@ function checkExpirations() {
 }
 
 // ============================================================
-// 13. EMAILJS - ส่งอีเมลผ่าน EmailJS (แก้ไขแล้ว)
+// 13. EMAILJS - ส่งอีเมลผ่าน EmailJS (แก้ไขแล้ว - ไม่ใช้ Handlebars)
 // ============================================================
 
 let emailRecipient = localStorage.getItem('emailRecipient') || 'phungaudomsongsakdi@gmail.com';
@@ -979,26 +979,20 @@ async function sendEmailTest() {
     }
 
     try {
-        // ✅ ใช้ flat object ไม่มี expiring array
-        const testData = {
-            plate: "ทดสอบ 999",
-            driver: "นายทดสอบ สมมติ",
-            license: "20/08/2026",
-            licenseWarning: true,
-            licenseDays: 60,
-            tax: "15/08/2026",
-            taxWarning: true,
-            taxDays: 55,
-            prb: "10/08/2026",
-            prbWarning: true,
-            prbDays: 50,
-            totalCount: 1
-        };
+        // ✅ สร้างข้อความสำเร็จรูป (ไม่ใช้ Handlebars ใน Template)
+        const licenseText = '📄 ใบขับขี่: 20/08/2026 (⚠️ ใกล้หมดอายุ 60 วัน)';
+        const taxText = '📄 ภาษี: 15/08/2026 (⚠️ ใกล้หมดอายุ 55 วัน)';
+        const prbText = '📄 พรบ.: 10/08/2026 (⚠️ ใกล้หมดอายุ 50 วัน)';
 
         const response = await emailjs.send(emailServiceId, emailTemplateId, {
             to_email: emailRecipient,
             subject: '✅ ทดสอบการแจ้งเตือนจากระบบรถรับ-ส่ง',
-            ...testData
+            plate: 'ทดสอบ 999',
+            driver: 'นายทดสอบ สมมติ',
+            licenseText: licenseText,
+            taxText: taxText,
+            prbText: prbText,
+            totalCount: 1
         });
         
         if (response.status === 200) {
@@ -1025,23 +1019,35 @@ async function sendEmailNotification() {
         return;
     }
 
-    // ✅ ส่งครั้งละ 1 รายการ (Loop ทีละรายการ)
     let successCount = 0;
     for (const item of expiring) {
+        // ✅ สร้างข้อความสำเร็จรูป (ไม่ใช้ Handlebars)
+        let licenseText = '';
+        if (getDateStatus(item.license) === 'warning') {
+            const days = getDaysRemaining(item.license);
+            licenseText = `📄 ใบขับขี่: ${formatDateDisplay(item.license)} (⚠️ ใกล้หมดอายุ ${days} วัน)`;
+        }
+        
+        let taxText = '';
+        if (getDateStatus(item.tax) === 'warning') {
+            const days = getDaysRemaining(item.tax);
+            taxText = `📄 ภาษี: ${formatDateDisplay(item.tax)} (⚠️ ใกล้หมดอายุ ${days} วัน)`;
+        }
+        
+        let prbText = '';
+        if (getDateStatus(item.prb) === 'warning') {
+            const days = getDaysRemaining(item.prb);
+            prbText = `📄 พรบ.: ${formatDateDisplay(item.prb)} (⚠️ ใกล้หมดอายุ ${days} วัน)`;
+        }
+
         const templateParams = {
             to_email: emailRecipient,
             subject: `📋 แจ้งเตือนเอกสารใกล้หมดอายุ: ${item.plate}`,
             plate: item.plate,
             driver: item.driver,
-            license: formatDateDisplay(item.license),
-            licenseWarning: getDateStatus(item.license) === 'warning',
-            licenseDays: getDaysRemaining(item.license) || 0,
-            tax: formatDateDisplay(item.tax),
-            taxWarning: getDateStatus(item.tax) === 'warning',
-            taxDays: getDaysRemaining(item.tax) || 0,
-            prb: formatDateDisplay(item.prb),
-            prbWarning: getDateStatus(item.prb) === 'warning',
-            prbDays: getDaysRemaining(item.prb) || 0,
+            licenseText: licenseText,
+            taxText: taxText,
+            prbText: prbText,
             totalCount: expiring.length
         };
 
@@ -1152,7 +1158,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('📌 คลิก ✏️ เพื่อแก้ไขข้อมูล');
     console.log('📅 คลิก 📅 เพื่อเลือกวันที่แบบปฏิทินไทย (พ.ศ.)');
     console.log('♾️ คลิก "ตลอดชีพ" เพื่อตั้งค่าเป็นตลอดชีพ');
-    console.log('📧 ใช้ EmailJS สำหรับแจ้งเตือน');
+    console.log('📧 ใช้ EmailJS สำหรับแจ้งเตือน (ไม่ใช้ Handlebars)');
     console.log('📊 ปุ่ม Export Excel ใช้งานได้');
     console.log('🔍 ปุ่มกรอง หมดอายุทั้งหมด และ ใกล้หมดอายุทั้งหมด');
     console.log('🔄 สถานะจะอัปเดตอัตโนมัติเมื่อเลือกวันที่');
