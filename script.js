@@ -961,7 +961,7 @@ function checkExpirations() {
 // 13. EMAILJS - ส่งอีเมลผ่าน EmailJS (รวมหมดอายุและใกล้หมดอายุ)
 // ============================================================
 
-let emailRecipient = localStorage.getItem('emailRecipient') || 'phungaudomsongsakdi@gmail.com';
+let emailRecipient = localStorage.getItem('emailRecipient') || 'Nattida.ga@namchow.co.th';
 let emailServiceId = localStorage.getItem('emailServiceId') || 'service_3ej324t';
 let emailTemplateId = localStorage.getItem('emailTemplateId') || 'template_i8a6s7q';
 let emailPublicKey = localStorage.getItem('emailPublicKey') || '';
