@@ -984,6 +984,13 @@ async function sendEmailTest() {
         const taxText = '📄 ภาษี: 15/08/2026 (⚠️ ใกล้หมดอายุ 55 วัน)';
         const prbText = '📄 พรบ.: 10/08/2026 (⚠️ ใกล้หมดอายุ 50 วัน)';
 
+        console.log('📧 กำลังส่งอีเมลทดสอบ...');
+        console.log('  plate: ทดสอบ 999');
+        console.log('  driver: นายทดสอบ สมมติ');
+        console.log('  licenseText:', licenseText);
+        console.log('  taxText:', taxText);
+        console.log('  prbText:', prbText);
+
         const response = await emailjs.send(emailServiceId, emailTemplateId, {
             to_email: emailRecipient,
             subject: '✅ ทดสอบการแจ้งเตือนจากระบบรถรับ-ส่ง',
@@ -1039,6 +1046,13 @@ async function sendEmailNotification() {
             const days = getDaysRemaining(item.prb);
             prbText = `📄 พรบ.: ${formatDateDisplay(item.prb)} (⚠️ ใกล้หมดอายุ ${days} วัน)`;
         }
+
+        console.log(`📧 ส่งอีเมลสำหรับ ${item.plate}:`);
+        console.log('  plate:', item.plate);
+        console.log('  driver:', item.driver);
+        console.log('  licenseText:', licenseText);
+        console.log('  taxText:', taxText);
+        console.log('  prbText:', prbText);
 
         const templateParams = {
             to_email: emailRecipient,
