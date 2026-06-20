@@ -1,28 +1,34 @@
 // ============================================================
-// 1. DATA - ฟังก์ชันแปลงวันที่
+// 1. DATA - ฟังก์ชันแสดงวันที่แบบไทย (พ.ศ.)
 // ============================================================
-function convertToAD(dateStr) {
+function formatThaiDate(dateStr) {
     if (!dateStr || dateStr === 'ตลอดชีพ') return dateStr;
+    
     const parts = dateStr.trim().split(' ');
     const datePart = parts[0];
     if (!datePart) return dateStr;
+    
     const ymd = datePart.split('-');
     if (ymd.length !== 3) return dateStr;
+    
     let y = parseInt(ymd[0], 10);
     const m = parseInt(ymd[1], 10);
     const d = parseInt(ymd[2], 10);
-    if (y > 2400) y = y - 543;
+    
+    // ถ้าเป็น ค.ศ. (ปีน้อยกว่า 2400) ให้แปลงเป็น พ.ศ.
+    if (y < 2400) y = y + 543;
+    
     return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
 }
 
 function formatDateDisplay(dateStr) {
     if (!dateStr) return '-';
     if (dateStr === 'ตลอดชีพ') return 'ตลอดชีพ';
-    return convertToAD(dateStr);
+    return formatThaiDate(dateStr);
 }
 
 // ============================================================
-// 2. DATE CHECK FUNCTIONS
+// 2. DATE CHECK FUNCTIONS (ใช้แปลงเป็น ค.ศ. เพื่อคำนวณ)
 // ============================================================
 function parseBuddhistDate(dateStr) {
     if (!dateStr || dateStr === 'ตลอดชีพ') return null;
@@ -146,6 +152,7 @@ const defaultVehicleData = [
     { id: 25, plate: "บล 8466", driver: "นายสมมาศ ยอดนิล", sub: "", idCard: "2569-12-05 00:00:00", idStatus: "✔️ ปกติ", license: "2569-08-06 00:00:00", licenseStatus: "❌ หมดอายุแล้ว", registered: "", passengers: 25, dist: 100, time1: "✓", time2: "✓", time3: "✓", fuel: "ดีเซล", tax: "2569-07-10 00:00:00", taxStatus: "", prb: "2569-07-10 00:00:00", prbStatus: "" },
     { id: 26, plate: "ผจ 4689", driver: "นางสาวอรสา ชูเลิศ", sub: "นางสาวอรสา ชูเลิศ", idCard: "2572-07-25 00:00:00", idStatus: "✔️ ปกติ", license: "2573-07-26 00:00:00", licenseStatus: "✔️  ปกติ", registered: "", passengers: 23, dist: 37, time1: "", time2: "✓", time3: "✓", fuel: "CNG สลับเบนซิน", tax: "2569-09-24 00:00:00", taxStatus: "", prb: "2570-05-01 00:00:00", prbStatus: "" }
 ];
+
 let vehicleData = [];
 let editingId = null;
 let editData = {};
@@ -218,11 +225,20 @@ function filterWarningAll() {
 }
 
 // ============================================================
-// 7. EXPORT EXCEL
+// 7. EXPORT EXCEL - แสดงวันที่เป็น พ.ศ.
 // ============================================================
 function exportToExcel() {
     try {
         let dataToExport = currentFilteredData.length > 0 ? currentFilteredData : vehicleData;
+
+        const now = new Date();
+        const reportDate = now.toLocaleDateString('th-TH', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
 
         let htmlContent = `
             <html>
@@ -249,7 +265,7 @@ function exportToExcel() {
             <body>
                 <h2>📊 รายงานสรุปสถานะเอกสารรถรับ-ส่ง</h2>
                 <div class="report-date">
-                    สร้างเมื่อ: ${new Date().toLocaleString('th-TH')}
+                    สร้างเมื่อ: ${reportDate}
                     | จำนวนรถ: ${dataToExport.length} คัน
                 </div>
                 <table>
@@ -344,7 +360,7 @@ function exportToExcel() {
         let url = URL.createObjectURL(blob);
         link.href = url;
         let now = new Date();
-        let fileName = `vehicle_report_${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}.xls`;
+        let fileName = `vehicle_report_${now.getFullYear()+543}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}.xls`;
         link.setAttribute("download", fileName);
         document.body.appendChild(link);
         link.click();
@@ -880,41 +896,79 @@ function getExpiringItems() {
     });
 }
 
+function getExpiredItems() {
+    return vehicleData.filter(item => {
+        const licenseStatus = getDateStatus(item.license);
+        const taxStatus = getDateStatus(item.tax);
+        const prbStatus = getDateStatus(item.prb);
+        return licenseStatus === 'expired' || taxStatus === 'expired' || prbStatus === 'expired';
+    });
+}
+
 function checkExpirations() {
     const expiring = getExpiringItems();
+    const expired = getExpiredItems();
     const banner = document.getElementById('notificationBanner');
     const count = document.getElementById('expiringCount');
-    if (expiring.length > 0) {
+    
+    if (expiring.length > 0 || expired.length > 0) {
         banner.classList.add('show');
-        count.textContent = expiring.length;
+        count.textContent = expiring.length + expired.length;
         
-        let msg = `⚠️ พบเอกสารที่ใกล้หมดอายุ ${expiring.length} รายการ\n\n`;
-        expiring.forEach(item => {
-            msg += `🚗 ${item.plate} - ${item.driver}\n`;
-            if (getDateStatus(item.license) === 'warning') {
-                const days = getDaysRemaining(item.license);
-                msg += `   📄 ใบขับขี่: เหลือ ${days} วัน\n`;
+        let msg = '';
+        if (expired.length > 0) {
+            msg += `❌ พบเอกสารที่หมดอายุแล้ว ${expired.length} รายการ\n\n`;
+            expired.slice(0, 10).forEach(item => {
+                msg += `🚗 ${item.plate} - ${item.driver}\n`;
+                if (getDateStatus(item.license) === 'expired') {
+                    msg += `   📄 ใบขับขี่: ${formatDateDisplay(item.license)} (หมดอายุแล้ว)\n`;
+                }
+                if (getDateStatus(item.tax) === 'expired') {
+                    msg += `   📄 ภาษี: ${formatDateDisplay(item.tax)} (หมดอายุแล้ว)\n`;
+                }
+                if (getDateStatus(item.prb) === 'expired') {
+                    msg += `   📄 พรบ.: ${formatDateDisplay(item.prb)} (หมดอายุแล้ว)\n`;
+                }
+                msg += '\n';
+            });
+            if (expired.length > 10) {
+                msg += `... และอีก ${expired.length - 10} รายการ\n\n`;
             }
-            if (getDateStatus(item.tax) === 'warning') {
-                const days = getDaysRemaining(item.tax);
-                msg += `   📄 ภาษี: เหลือ ${days} วัน\n`;
+        }
+        
+        if (expiring.length > 0) {
+            if (expired.length > 0) msg += '\n';
+            msg += `⚠️ พบเอกสารที่ใกล้หมดอายุ ${expiring.length} รายการ\n\n`;
+            expiring.slice(0, 10).forEach(item => {
+                msg += `🚗 ${item.plate} - ${item.driver}\n`;
+                if (getDateStatus(item.license) === 'warning') {
+                    const days = getDaysRemaining(item.license);
+                    msg += `   📄 ใบขับขี่: เหลือ ${days} วัน\n`;
+                }
+                if (getDateStatus(item.tax) === 'warning') {
+                    const days = getDaysRemaining(item.tax);
+                    msg += `   📄 ภาษี: เหลือ ${days} วัน\n`;
+                }
+                if (getDateStatus(item.prb) === 'warning') {
+                    const days = getDaysRemaining(item.prb);
+                    msg += `   📄 พรบ.: เหลือ ${days} วัน\n`;
+                }
+                msg += '\n';
+            });
+            if (expiring.length > 10) {
+                msg += `... และอีก ${expiring.length - 10} รายการ\n`;
             }
-            if (getDateStatus(item.prb) === 'warning') {
-                const days = getDaysRemaining(item.prb);
-                msg += `   📄 พรบ.: เหลือ ${days} วัน\n`;
-            }
-            msg += '\n';
-        });
+        }
         alert(msg);
     } else {
         banner.classList.remove('show');
-        alert('✅ ไม่พบเอกสารที่ใกล้หมดอายุใน 2 เดือน');
+        alert('✅ ไม่พบเอกสารที่หมดอายุหรือใกล้หมดอายุ');
     }
-    return expiring;
+    return { expiring, expired };
 }
 
 // ============================================================
-// 13. EMAILJS - ส่งอีเมลผ่าน EmailJS (รวมทั้งหมดในอีเมลเดียว)
+// 13. EMAILJS - ส่งอีเมลผ่าน EmailJS (รวมหมดอายุและใกล้หมดอายุ)
 // ============================================================
 
 let emailRecipient = localStorage.getItem('emailRecipient') || 'phungaudomsongsakdi@gmail.com';
@@ -978,7 +1032,6 @@ async function sendEmailTest() {
     }
 
     try {
-        // ✅ สร้างข้อความทดสอบรวมในบรรทัดเดียว
         const testMessage = '🚗 ทะเบียน: ทดสอบ 999\n👤 ผู้ขับขี่: นายทดสอบ สมมติ\n📄 ใบขับขี่: 20/08/2026 (⚠️ ใกล้หมดอายุ 60 วัน)\n📄 ภาษี: 15/08/2026 (⚠️ ใกล้หมดอายุ 55 วัน)\n📄 พรบ.: 10/08/2026 (⚠️ ใกล้หมดอายุ 50 วัน)\n';
 
         const response = await emailjs.send(emailServiceId, emailTemplateId, {
@@ -1007,43 +1060,76 @@ async function sendEmailNotification() {
     }
 
     const expiring = getExpiringItems();
-    if (expiring.length === 0) {
-        alert('✅ ไม่มีเอกสารที่ใกล้หมดอายุ');
+    const expired = getExpiredItems();
+    
+    if (expiring.length === 0 && expired.length === 0) {
+        alert('✅ ไม่มีเอกสารที่หมดอายุหรือใกล้หมดอายุ');
         return;
     }
 
     // ✅ สร้างข้อความรวมทั้งหมดในอีเมลเดียว
     let combinedMessage = '';
-    expiring.forEach((item) => {
-        combinedMessage += `🚗 ทะเบียน: ${item.plate}\n`;
-        combinedMessage += `👤 ผู้ขับขี่: ${item.driver}\n`;
-        
-        if (getDateStatus(item.license) === 'warning') {
-            const days = getDaysRemaining(item.license);
-            combinedMessage += `📄 ใบขับขี่: ${formatDateDisplay(item.license)} (⚠️ ใกล้หมดอายุ ${days} วัน)\n`;
-        }
-        if (getDateStatus(item.tax) === 'warning') {
-            const days = getDaysRemaining(item.tax);
-            combinedMessage += `📄 ภาษี: ${formatDateDisplay(item.tax)} (⚠️ ใกล้หมดอายุ ${days} วัน)\n`;
-        }
-        if (getDateStatus(item.prb) === 'warning') {
-            const days = getDaysRemaining(item.prb);
-            combinedMessage += `📄 พรบ.: ${formatDateDisplay(item.prb)} (⚠️ ใกล้หมดอายุ ${days} วัน)\n`;
-        }
-        combinedMessage += '\n';
-    });
+    
+    // ส่วนที่หมดอายุแล้ว
+    if (expired.length > 0) {
+        combinedMessage += `❌ เอกสารที่หมดอายุแล้ว (${expired.length} รายการ)\n`;
+        combinedMessage += '═'.repeat(30) + '\n\n';
+        expired.forEach((item) => {
+            combinedMessage += `🚗 ทะเบียน: ${item.plate}\n`;
+            combinedMessage += `👤 ผู้ขับขี่: ${item.driver}\n`;
+            
+            if (getDateStatus(item.license) === 'expired') {
+                combinedMessage += `📄 ใบขับขี่: ${formatDateDisplay(item.license)} (❌ หมดอายุแล้ว)\n`;
+            }
+            if (getDateStatus(item.tax) === 'expired') {
+                combinedMessage += `📄 ภาษี: ${formatDateDisplay(item.tax)} (❌ หมดอายุแล้ว)\n`;
+            }
+            if (getDateStatus(item.prb) === 'expired') {
+                combinedMessage += `📄 พรบ.: ${formatDateDisplay(item.prb)} (❌ หมดอายุแล้ว)\n`;
+            }
+            combinedMessage += '\n';
+        });
+    }
+    
+    // ส่วนที่ใกล้หมดอายุ
+    if (expiring.length > 0) {
+        if (expired.length > 0) combinedMessage += '\n';
+        combinedMessage += `⚠️ เอกสารที่ใกล้หมดอายุ (${expiring.length} รายการ)\n`;
+        combinedMessage += '═'.repeat(30) + '\n\n';
+        expiring.forEach((item) => {
+            combinedMessage += `🚗 ทะเบียน: ${item.plate}\n`;
+            combinedMessage += `👤 ผู้ขับขี่: ${item.driver}\n`;
+            
+            if (getDateStatus(item.license) === 'warning') {
+                const days = getDaysRemaining(item.license);
+                combinedMessage += `📄 ใบขับขี่: ${formatDateDisplay(item.license)} (⚠️ ใกล้หมดอายุ ${days} วัน)\n`;
+            }
+            if (getDateStatus(item.tax) === 'warning') {
+                const days = getDaysRemaining(item.tax);
+                combinedMessage += `📄 ภาษี: ${formatDateDisplay(item.tax)} (⚠️ ใกล้หมดอายุ ${days} วัน)\n`;
+            }
+            if (getDateStatus(item.prb) === 'warning') {
+                const days = getDaysRemaining(item.prb);
+                combinedMessage += `📄 พรบ.: ${formatDateDisplay(item.prb)} (⚠️ ใกล้หมดอายุ ${days} วัน)\n`;
+            }
+            combinedMessage += '\n';
+        });
+    }
+    
+    combinedMessage += `📊 จำนวนเอกสารหมดอายุ: ${expired.length} รายการ, ใกล้หมดอายุ: ${expiring.length} รายการ\n`;
+    combinedMessage += `🔗 เปิดระบบ: https://phungaudomsongsakdi-spec.github.io/CAR/`;
 
     const templateParams = {
         to_email: emailRecipient,
-        subject: `📋 แจ้งเตือนเอกสารใกล้หมดอายุ (${expiring.length} รายการ)`,
+        subject: `📋 แจ้งเตือนเอกสาร (หมดอายุ ${expired.length} รายการ, ใกล้หมดอายุ ${expiring.length} รายการ)`,
         combinedMessage: combinedMessage,
-        totalCount: expiring.length
+        totalCount: expiring.length + expired.length
     };
 
     try {
         const response = await emailjs.send(emailServiceId, emailTemplateId, templateParams);
         if (response.status === 200) {
-            alert(`✅ ส่งอีเมลแจ้งเตือนสำเร็จ! (${expiring.length} รายการ)`);
+            alert(`✅ ส่งอีเมลแจ้งเตือนสำเร็จ! (หมดอายุ ${expired.length} รายการ, ใกล้หมดอายุ ${expiring.length} รายการ)`);
         } else {
             alert('❌ ส่งอีเมลไม่สำเร็จ: ' + response.text);
         }
@@ -1062,7 +1148,8 @@ function scheduleDailyEmail() {
     
     setTimeout(() => {
         const expiring = getExpiringItems();
-        if (expiring.length > 0 && emailRecipient && emailServiceId && emailTemplateId && emailPublicKey) {
+        const expired = getExpiredItems();
+        if ((expiring.length > 0 || expired.length > 0) && emailRecipient && emailServiceId && emailTemplateId && emailPublicKey) {
             sendEmailNotification();
         }
         scheduleDailyEmail();
@@ -1144,7 +1231,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('📌 คลิก ✏️ เพื่อแก้ไขข้อมูล');
     console.log('📅 คลิก 📅 เพื่อเลือกวันที่แบบปฏิทินไทย (พ.ศ.)');
     console.log('♾️ คลิก "ตลอดชีพ" เพื่อตั้งค่าเป็นตลอดชีพ');
-    console.log('📧 ใช้ EmailJS สำหรับแจ้งเตือน (รวมทั้งหมดในอีเมลเดียว)');
+    console.log('📧 ใช้ EmailJS สำหรับแจ้งเตือน (รวมหมดอายุและใกล้หมดอายุ)');
     console.log('📊 ปุ่ม Export Excel ใช้งานได้');
     console.log('🔍 ปุ่มกรอง หมดอายุทั้งหมด และ ใกล้หมดอายุทั้งหมด');
     console.log('🔄 สถานะจะอัปเดตอัตโนมัติเมื่อเลือกวันที่');
