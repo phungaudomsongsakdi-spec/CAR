@@ -146,7 +146,6 @@ const defaultVehicleData = [
     { id: 25, plate: "บล 8466", driver: "นายสมมาศ ยอดนิล", sub: "", idCard: "2569-12-05 00:00:00", idStatus: "✔️ ปกติ", license: "2569-08-06 00:00:00", licenseStatus: "❌ หมดอายุแล้ว", registered: "", passengers: 25, dist: 100, time1: "✓", time2: "✓", time3: "✓", fuel: "ดีเซล", tax: "2569-07-10 00:00:00", taxStatus: "", prb: "2569-07-10 00:00:00", prbStatus: "" },
     { id: 26, plate: "ผจ 4689", driver: "นางสาวอรสา ชูเลิศ", sub: "นางสาวอรสา ชูเลิศ", idCard: "2572-07-25 00:00:00", idStatus: "✔️ ปกติ", license: "2573-07-26 00:00:00", licenseStatus: "✔️  ปกติ", registered: "", passengers: 23, dist: 37, time1: "", time2: "✓", time3: "✓", fuel: "CNG สลับเบนซิน", tax: "2569-09-24 00:00:00", taxStatus: "", prb: "2570-05-01 00:00:00", prbStatus: "" }
 ];
-
 let vehicleData = [];
 let editingId = null;
 let editData = {};
