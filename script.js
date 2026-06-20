@@ -979,7 +979,7 @@ async function sendEmailTest() {
     }
 
     try {
-        // ✅ สร้างข้อความสำเร็จรูป (ไม่ใช้ Handlebars ใน Template)
+        // ✅ สร้างข้อความทดสอบรวมในบรรทัดเดียว
         const testMessage = '🚗 ทะเบียน: ทดสอบ 999\n👤 ผู้ขับขี่: นายทดสอบ สมมติ\n📄 ใบขับขี่: 20/08/2026 (⚠️ ใกล้หมดอายุ 60 วัน)\n📄 ภาษี: 15/08/2026 (⚠️ ใกล้หมดอายุ 55 วัน)\n📄 พรบ.: 10/08/2026 (⚠️ ใกล้หมดอายุ 50 วัน)\n';
 
         const response = await emailjs.send(emailServiceId, emailTemplateId, {
